@@ -12,18 +12,16 @@ import java.sql.*;
  */
 public class AdminLanding extends javax.swing.JFrame {
 
-    private final String DB_URL = "jdbc:mysql://localhost:3306/lostandfound";
-    private final String DB_USER = "root";
-    private final String DB_PASSWORD = "";
     private JTable userTable;
     private DefaultTableModel tableModel;
-    
+
     /**
-     * Creates new form Main
+     * Creates new form AdminLanding
      */
     public AdminLanding() {
         initComponents();
         setLocationRelativeTo(null);
+        loadUserData(); // Load user data when the admin landing page is initialized
     }
 
     private void loadUserData() {
@@ -31,11 +29,11 @@ public class AdminLanding extends javax.swing.JFrame {
         tableModel = new DefaultTableModel(new String[]{"USC ID", "Username", "Role"}, 0);
         userTable.setModel(tableModel);
 
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-             Statement stmt = conn.createStatement()) {
-             
-            String query = "SELECT USC_ID, Username, Role FROM Users";
-            ResultSet rs = stmt.executeQuery(query);
+        String query = "SELECT USC_ID, Username, Role FROM Users";
+
+        try (Connection conn = connectDB.getConnection(); // Use centralized connection
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
 
             while (rs.next()) {
                 String uscID = rs.getString("USC_ID");
@@ -88,9 +86,9 @@ public class AdminLanding extends javax.swing.JFrame {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGap(30, 30, 30)
+                .addGap(75, 75, 75)
                 .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 158, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 443, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 398, Short.MAX_VALUE)
                 .addComponent(jToolBar1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
         layout.setVerticalGroup(
@@ -99,17 +97,17 @@ public class AdminLanding extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jToolBar1, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(23, 23, 23)
+                        .addGap(17, 17, 17)
                         .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(373, Short.MAX_VALUE))
+                .addContainerGap(379, Short.MAX_VALUE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void logoutButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_logoutButtonActionPerformed
-            new Login().setVisible(true);
-            this.dispose();        // TODO add your handling code here:
+        new Login().setVisible(true); // Open a new Login window
+        this.dispose(); // Dispose of the current AdminLanding frame
     }//GEN-LAST:event_logoutButtonActionPerformed
 
     /**

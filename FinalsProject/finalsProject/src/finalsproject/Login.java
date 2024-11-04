@@ -4,18 +4,16 @@
  */
 package finalsproject;
 import javax.swing.*;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 /**
  *
  * @author User
  */
 public class Login extends javax.swing.JFrame {
-    
-    // Database connection parameters
-    private final String DB_URL = "jdbc:mysql://localhost:3306/lostandfound";
-    private final String DB_USER = "root";
-    private final String DB_PASSWORD = "";
 
     /**
      * Creates new form Login
@@ -24,34 +22,25 @@ public class Login extends javax.swing.JFrame {
         initComponents();
         setLocationRelativeTo(null);
     }
-    
-private Connection dbConnect() {
-        try {
-            return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Database connection failed: " + e.getMessage());
-            return null;
-        }
-    }
 
- private String getUserRole(String uscID, String password) {
-    String query = "SELECT role FROM Users WHERE USC_ID = ? AND Password = ?";
-    try (Connection conn = dbConnect();
-         PreparedStatement pstmt = conn.prepareStatement(query)) {
-        
-        pstmt.setString(1, uscID);
-        pstmt.setString(2, password);
+    private String getUserRole(String uscID, String password) {
+        String query = "SELECT role FROM Users WHERE USC_ID = ? AND Password = ?";
+        try (Connection conn = connectDB.getConnection(); // Use centralized connection
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
 
-        try (ResultSet rs = pstmt.executeQuery()) {
-            if (rs.next()) {
-                return rs.getString("role"); // Return the role if found
+            pstmt.setString(1, uscID);
+            pstmt.setString(2, password);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("role"); // Return the role if found
+                }
             }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
         }
-    } catch (SQLException e) {
-        JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+        return null; // Return null if no match found or error occurs
     }
-    return null; // Return null if no match found or error occurs
-}
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -150,9 +139,8 @@ private Connection dbConnect() {
     }//GEN-LAST:event_USC_IDFieldActionPerformed
 
     private void loginButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loginButtonActionPerformed
-        // TODO add your handling code here:
-        String uscID = USC_IDField.getText();
-    String password = new String(passField.getPassword());
+         String uscID = USC_IDField.getText(); // Get the USC ID from the input field
+    String password = new String(passField.getPassword()); // Get the password from the password field
 
     // Get user role from the database
     String role = getUserRole(uscID, password);
@@ -161,21 +149,28 @@ private Connection dbConnect() {
         // Check user role and perform action based on the role
         if (role.equals("admin")) {
             // Open Admin landing page
-            new AdminLanding().setVisible(true);
-            this.dispose();
+            AdminLanding adminLanding = new AdminLanding(); // Create a new instance
+            adminLanding.setVisible(true);
+            this.dispose(); // Dispose current Login frame
         } else if (role.equals("staff")) {
             // Open Staff landing page
-            new StaffLanding().setVisible(true);
-            this.dispose();
+            StaffLanding staffLanding = new StaffLanding(); // Create a new instance
+            staffLanding.setVisible(true);
+            this.dispose(); // Dispose current Login frame
         } else if (role.equals("user")) {
             // Open User landing page
-            new UserLanding().setVisible(true);
-            this.dispose();
+            UserLanding userLanding = new UserLanding(); // Create a new instance
+            userLanding.setVisible(true);
+            this.dispose(); // Dispose current Login frame
         }
     } else {
         // Show error message for incorrect credentials
         JOptionPane.showMessageDialog(this, "Invalid USC ID or Password. Please try again.");
-    } 
+        
+        // Optionally clear the password field for the next attempt
+        passField.setText(""); // Clear the password field
+        USC_IDField.requestFocus(); // Set focus back to USC ID field
+    }
     }//GEN-LAST:event_loginButtonActionPerformed
 
     
@@ -190,9 +185,6 @@ private Connection dbConnect() {
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
@@ -200,17 +192,11 @@ private Connection dbConnect() {
                     break;
                 }
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(Login.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(Login.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(Login.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(Login.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
-
+            
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {

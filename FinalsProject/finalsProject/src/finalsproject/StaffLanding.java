@@ -78,7 +78,7 @@ public class StaffLanding extends javax.swing.JFrame {
     private void logoutButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_logoutButtonActionPerformed
         // TODO add your handling code here:
         new Login().setVisible(true);
-            this.dispose();
+        this.dispose();
     }//GEN-LAST:event_logoutButtonActionPerformed
 
     /**
