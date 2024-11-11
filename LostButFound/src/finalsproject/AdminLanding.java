@@ -157,6 +157,8 @@ public class AdminLanding extends javax.swing.JFrame {
 
     private void ItemManagementActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ItemManagementActionPerformed
         // TODO add your handling code here:
+        new ItemManagement().setVisible(true);
+        this.dispose();
     }//GEN-LAST:event_ItemManagementActionPerformed
 
     private void ReqManagementActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ReqManagementActionPerformed

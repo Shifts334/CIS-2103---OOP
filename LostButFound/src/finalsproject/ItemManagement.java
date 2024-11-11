@@ -7,8 +7,14 @@ package finalsproject;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.*;
+import javax.swing.table.DefaultTableModel;
+import java.text.ParseException;  
+import java.text.SimpleDateFormat;  
+import java.util.Date;  
+import java.util.Scanner;  
+import java.text.SimpleDateFormat;
+
 /**
  *
  * @author User
@@ -19,65 +25,18 @@ public class ItemManagement extends javax.swing.JFrame {
     private CardLayout cardLayout; // Layout for switching between cards
     private JButton nextButton, previousButton; // Buttons to navigate through cards
     private int currentCard = 0; // To keep track of the current card
-    
-    private String[][] items = {
-        {"A blue aqua flask", "2024-10-01", "Lost in LB486", "aqua-flask.jpg"},
-        {"A red water jug", "2024-11-09", "Found in bunzel", "red-jug.jpg"}
-    };
+  
     
     public ItemManagement() {
         initComponents();
         setLocationRelativeTo(null);
-        setUpCardLayout(); // Set up the card layout with items
+        fetchAndDisplayItemData(); // Fetch and display item data in the table
     }
     
     /**
      * This method is called to initialize the form.
      * It sets up the layout and initializes the cards for each item.
      */
-    private void setUpCardLayout() {
-        // Initialize the CardLayout and the panel to hold the cards
-        cardLayout = new CardLayout();
-        cardPanel = new JPanel(cardLayout);
-
-        // Create a card for each item
-        for (String[] item : items) {
-            JPanel card = createItemCard(item[0], item[1], item[2], item[3]);
-            cardPanel.add(card, item[0]); // Add the card to the cardPanel
-        }
-
-        // Add the cardPanel to the JFrame content pane
-        getContentPane().add(cardPanel, BorderLayout.CENTER);
-
-        // Buttons to navigate between cards
-        nextButton = new JButton("Next");
-        previousButton = new JButton("Previous");
-
-        // Action listeners to change cards
-        nextButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                cardLayout.next(cardPanel);
-                currentCard = (currentCard + 1) % items.length;
-            }
-        });
-
-        previousButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                cardLayout.previous(cardPanel);
-                currentCard = (currentCard - 1 + items.length) % items.length;
-            }
-        });
-
-        // Panel to hold navigation buttons
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.add(previousButton);
-        buttonPanel.add(nextButton);
-
-        // Add the button panel to the bottom of the JFrame
-        getContentPane().add(buttonPanel, BorderLayout.SOUTH);
-    }
 
     /**
      * Method to create a card for each item.
@@ -133,9 +92,17 @@ public class ItemManagement extends javax.swing.JFrame {
         itemNameField = new javax.swing.JTextField();
         DateLabel = new javax.swing.JLabel();
         DateField = new javax.swing.JTextField();
-        DateButton = new javax.swing.JButton();
+        DescLabel = new javax.swing.JLabel();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        DescField = new javax.swing.JTextArea();
+        LocationLabel = new javax.swing.JLabel();
+        jScrollPane3 = new javax.swing.JScrollPane();
+        LocationField = new javax.swing.JTextArea();
+        AddItemButton = new javax.swing.JButton();
+        EditButton = new javax.swing.JButton();
+        DeleteButton = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
-        jTable1 = new javax.swing.JTable();
+        ItemTable = new javax.swing.JTable();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setPreferredSize(new java.awt.Dimension(900, 650));
@@ -151,18 +118,54 @@ public class ItemManagement extends javax.swing.JFrame {
 
         itemNameLabel.setText("Item Name");
 
-        DateLabel.setText("Date");
+        itemNameField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                itemNameFieldActionPerformed(evt);
+            }
+        });
 
+        DateLabel.setText("Date (dd/MM/yyyy)");
+
+        DateField.setCursor(new java.awt.Cursor(java.awt.Cursor.TEXT_CURSOR));
         DateField.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 DateFieldActionPerformed(evt);
             }
         });
 
-        DateButton.setText("jButton1");
-        DateButton.addActionListener(new java.awt.event.ActionListener() {
+        DescLabel.setText("Description");
+
+        DescField.setColumns(20);
+        DescField.setRows(5);
+        jScrollPane2.setViewportView(DescField);
+
+        LocationLabel.setText("Location");
+
+        LocationField.setColumns(20);
+        LocationField.setRows(5);
+        jScrollPane3.setViewportView(LocationField);
+
+        AddItemButton.setBackground(new java.awt.Color(102, 255, 102));
+        AddItemButton.setText("Add Item");
+        AddItemButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                DateButtonActionPerformed(evt);
+                AddItemButtonActionPerformed(evt);
+            }
+        });
+
+        EditButton.setBackground(new java.awt.Color(255, 255, 102));
+        EditButton.setText("Edit Item");
+        EditButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                EditButtonActionPerformed(evt);
+            }
+        });
+
+        DeleteButton.setBackground(new java.awt.Color(255, 51, 51));
+        DeleteButton.setText("Delete Item");
+        DeleteButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                DeleteButtonActionPerformed(evt);
             }
         });
 
@@ -171,34 +174,73 @@ public class ItemManagement extends javax.swing.JFrame {
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(22, 22, 22)
-                .addComponent(itemNameLabel)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(itemNameField, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(16, 16, 16)
+                .addComponent(AddItemButton)
                 .addGap(18, 18, 18)
-                .addComponent(DateLabel)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(DateField)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(DateButton, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(246, 246, 246))
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(DeleteButton)
+                    .addComponent(EditButton))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(22, 22, 22)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(DateLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 112, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(DateField, javax.swing.GroupLayout.DEFAULT_SIZE, 138, Short.MAX_VALUE)
+                        .addGap(12, 12, 12))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(itemNameLabel)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(itemNameField, javax.swing.GroupLayout.PREFERRED_SIZE, 191, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(LocationLabel)
+                        .addGap(21, 21, 21))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                        .addComponent(DescLabel)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)))
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 337, Short.MAX_VALUE)
+                    .addComponent(jScrollPane3))
+                .addGap(25, 25, 25))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(19, 19, 19)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                .addGap(13, 13, 13)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(DateLabel)
-                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(DateField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(DateButton))
-                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(itemNameLabel)
-                        .addComponent(itemNameField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(110, Short.MAX_VALUE))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 66, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(DescLabel)
+                            .addComponent(itemNameField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(itemNameLabel))
+                        .addGap(37, 37, 37)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addGap(19, 19, 19)
+                                .addComponent(LocationLabel))
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                    .addComponent(DateField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(DateLabel))
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(jPanel1Layout.createSequentialGroup()
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                        .addComponent(EditButton)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(DeleteButton))
+                                    .addGroup(jPanel1Layout.createSequentialGroup()
+                                        .addGap(27, 27, 27)
+                                        .addComponent(AddItemButton)))))))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
-        jTable1.setModel(new javax.swing.table.DefaultTableModel(
+        ItemTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null, null},
                 {null, null, null, null, null},
@@ -217,32 +259,34 @@ public class ItemManagement extends javax.swing.JFrame {
                 return types [columnIndex];
             }
         });
-        jScrollPane1.setViewportView(jTable1);
+        jScrollPane1.setViewportView(ItemTable);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(45, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 803, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addGroup(layout.createSequentialGroup()
+                .addGap(22, 22, 22)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jScrollPane1)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
+                        .addGap(33, 33, 33)
                         .addComponent(BackButton)))
-                .addGap(52, 52, 52))
+                .addContainerGap(140, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(19, 19, 19)
+                .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(BackButton))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 14, Short.MAX_VALUE)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 411, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(22, 22, 22))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(BackButton)
+                        .addGap(0, 176, Short.MAX_VALUE))
+                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 380, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(23, 23, 23))
         );
 
         pack();
@@ -254,13 +298,121 @@ public class ItemManagement extends javax.swing.JFrame {
         this.dispose();
     }//GEN-LAST:event_BackButtonActionPerformed
 
-    private void DateButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_DateButtonActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_DateButtonActionPerformed
+    private void fetchAndDisplayItemData() {
+        // Query to fetch data from the 'item' table
+        String query = "SELECT Item_ID, ItemName, Date, Description, Location FROM item";
+        
+        DefaultTableModel model = (DefaultTableModel) ItemTable.getModel(); // Get table model
+        model.setRowCount(0); // Clear the table before populating
 
+        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/lostandfound", "root", "");
+             PreparedStatement pstmt = conn.prepareStatement(query);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                // Retrieve data from the result set
+                int itemId = rs.getInt("Item_ID");
+                String itemName = rs.getString("ItemName");
+                String date = rs.getString("Date");
+                String description = rs.getString("Description");
+                String location = rs.getString("Location");
+
+                // Add data to the table model
+                model.addRow(new Object[]{itemId, itemName, date, description, location});
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Database error: " + e.getMessage());
+        }
+    }
+    
     private void DateFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_DateFieldActionPerformed
         // TODO add your handling code here:
+        // Capture the date entered by the user in the DateField
+        String date = DateField.getText().trim();
+
+        // Validate the date format
+        SimpleDateFormat sdfInput = new SimpleDateFormat("yyyy/MM/dd");
+        sdfInput.setLenient(false);  // Disable lenient parsing
+
+        try {
+            Date parsedDate = sdfInput.parse(date);  // Try to parse the date
+            System.out.println("Valid date: " + date);  // Debugging: Log the valid date
+        } catch (ParseException e) {
+            // If invalid, show an error message and clear the DateField
+            JOptionPane.showMessageDialog(this, "Invalid date format. Please use yyyy/MM/dd.");
+            DateField.setText("");  // Clear the DateField to prompt the user to re-enter
+        }
     }//GEN-LAST:event_DateFieldActionPerformed
+
+    private void itemNameFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_itemNameFieldActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_itemNameFieldActionPerformed
+
+    private void AddItemButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AddItemButtonActionPerformed
+        // TODO add your handling code here:
+        // Capture the input values from the text fields
+        String itemName = itemNameField.getText().trim();
+        String description = DescField.getText().trim();
+        String location = LocationField.getText().trim();
+        String date = DateField.getText().trim();  // Get the date from DateField
+
+        // Validate the inputs (ensure no fields are empty)
+        if (itemName.isEmpty() || description.isEmpty() || location.isEmpty() || date.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please fill all fields.");
+            return;
+        }
+
+        // Validate the date format using the SimpleDateFormat
+        SimpleDateFormat sdfInput = new SimpleDateFormat("dd/MM/yyyy");
+        sdfInput.setLenient(false);  // Disable lenient parsing
+        try {
+            Date parsedDate = sdfInput.parse(date);  // Validate the date
+            System.out.println("Parsed Date: " + parsedDate); // Debugging: Log the parsed date
+
+            // Convert the date to yyyy-MM-dd format for MySQL
+            SimpleDateFormat sdfOutput = new SimpleDateFormat("yyyy-MM-dd");
+            String formattedDate = sdfOutput.format(parsedDate);
+            System.out.println("Formatted Date for DB: " + formattedDate); // Debugging: Log the formatted date
+
+            // SQL query to insert a new item into the database
+            String query = "INSERT INTO item (ItemName, Date, Description, Location) VALUES (?, ?, ?, ?)";
+
+            try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/lostandfound", "root", "");
+                 PreparedStatement pstmt = conn.prepareStatement(query)) {
+
+                // Set the parameters for the query
+                pstmt.setString(1, itemName);
+                pstmt.setString(2, formattedDate);  // Use the correctly formatted date
+                pstmt.setString(3, description);
+                pstmt.setString(4, location);
+
+                // Execute the insert query
+                int rowsAffected = pstmt.executeUpdate();
+
+                if (rowsAffected > 0) {
+                    JOptionPane.showMessageDialog(this, "Item added successfully.");
+                    fetchAndDisplayItemData();  // Refresh the table to display the new item
+                } else {
+                    JOptionPane.showMessageDialog(this, "Failed to add item.");
+                }
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(this, "Database error: " + e.getMessage());
+            }
+
+        } catch (ParseException e) {
+            // If invalid, show an error message
+            JOptionPane.showMessageDialog(this, "Invalid date format. Please use dd/MM/yyyy.");
+            return;
+        }
+    }//GEN-LAST:event_AddItemButtonActionPerformed
+
+    private void EditButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_EditButtonActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_EditButtonActionPerformed
+
+    private void DeleteButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_DeleteButtonActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_DeleteButtonActionPerformed
 
     /**
      * @param args the command line arguments
@@ -298,14 +450,22 @@ public class ItemManagement extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton AddItemButton;
     private javax.swing.JButton BackButton;
-    private javax.swing.JButton DateButton;
     private javax.swing.JTextField DateField;
     private javax.swing.JLabel DateLabel;
+    private javax.swing.JButton DeleteButton;
+    private javax.swing.JTextArea DescField;
+    private javax.swing.JLabel DescLabel;
+    private javax.swing.JButton EditButton;
+    private javax.swing.JTable ItemTable;
+    private javax.swing.JTextArea LocationField;
+    private javax.swing.JLabel LocationLabel;
     private javax.swing.JTextField itemNameField;
     private javax.swing.JLabel itemNameLabel;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JTable jTable1;
+    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JScrollPane jScrollPane3;
     // End of variables declaration//GEN-END:variables
 }
