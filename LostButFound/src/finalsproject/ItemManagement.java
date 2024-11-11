@@ -364,43 +364,37 @@ public class ItemManagement extends javax.swing.JFrame {
 
         // Validate the date format using the SimpleDateFormat
         SimpleDateFormat sdfInput = new SimpleDateFormat("dd/MM/yyyy");
-        sdfInput.setLenient(false);  // Disable lenient parsing
+        sdfInput.setLenient(false);
         try {
             Date parsedDate = sdfInput.parse(date);  // Validate the date
-            System.out.println("Parsed Date: " + parsedDate); // Debugging: Log the parsed date
+            System.out.println("Parsed Date: " + parsedDate);  // Debugging: Log the parsed date
 
-            // Convert the date to yyyy-MM-dd format for MySQL
+            // Convert to the correct format for MySQL (yyyy-MM-dd)
             SimpleDateFormat sdfOutput = new SimpleDateFormat("yyyy-MM-dd");
             String formattedDate = sdfOutput.format(parsedDate);
             System.out.println("Formatted Date for DB: " + formattedDate); // Debugging: Log the formatted date
 
-            // SQL query to insert a new item into the database
+            // Insert the formatted date into the database
             String query = "INSERT INTO item (ItemName, Date, Description, Location) VALUES (?, ?, ?, ?)";
-
             try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/lostandfound", "root", "");
                  PreparedStatement pstmt = conn.prepareStatement(query)) {
-
-                // Set the parameters for the query
                 pstmt.setString(1, itemName);
                 pstmt.setString(2, formattedDate);  // Use the correctly formatted date
                 pstmt.setString(3, description);
                 pstmt.setString(4, location);
 
-                // Execute the insert query
                 int rowsAffected = pstmt.executeUpdate();
-
                 if (rowsAffected > 0) {
                     JOptionPane.showMessageDialog(this, "Item added successfully.");
-                    fetchAndDisplayItemData();  // Refresh the table to display the new item
+                    fetchAndDisplayItemData();  // Refresh the table
                 } else {
                     JOptionPane.showMessageDialog(this, "Failed to add item.");
                 }
-            } catch (SQLException e) {
-                JOptionPane.showMessageDialog(this, "Database error: " + e.getMessage());
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage());
             }
 
         } catch (ParseException e) {
-            // If invalid, show an error message
             JOptionPane.showMessageDialog(this, "Invalid date format. Please use dd/MM/yyyy.");
             return;
         }
